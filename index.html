@@ -1,435 +1,24 @@
-import React, { useState, useMemo } from 'react';
-import { 
-  BookOpen, 
-  RefreshCw, 
-  ArrowLeft, 
-  ArrowRight, 
-  CheckCircle, 
-  XCircle, 
-  Layout, 
-  Upload,
-  Brain,
-  ShieldAlert,
-  Users,
-  Scale,
-  Stethoscope,
-  Shuffle
-} from 'lucide-react';
-
-const INITIAL_CARDS = [
-  // --- SOCIAL COGNITION ---
-  { id: 1, category: "Social Cognition", type: "basic", front: "What part of the brain is the 'neural alarm system' for social pain?", back: "Anterior Cingulate Cortex (ACC).\nIt processes the 'distress' component of both physical and social pain (like exclusion)." },
-  { id: 2, category: "Social Cognition", type: "bidirectional", front: "Social Brain Evolution Hypothesis", back: "The theory that the primary driver for human brain expansion (neocortex ratio) was the need to manage complex group dynamics and social relationships." },
-  { id: 3, category: "Social Cognition", type: "comparison", front: "Shape Chasing (Heider & Simmel): Typical vs. Autistic response", back: "Typical: Create a social narrative (e.g., 'The big triangle is a bully').\nAutistic: Provide literal, geometric descriptions (e.g., 'The triangle went inside the rectangle')." },
-  { id: 4, category: "Social Cognition", type: "bidirectional", front: "Point-Light Walkers", back: "The phenomenon where humans instantly recognize biological motion and social information from just a few moving dots." },
-  { id: 5, category: "Social Cognition", type: "comparison", front: "False Belief Test vs. False Photograph Test", back: "False Belief (Sally-Anne): Measures tracking mental states (social logic). Autistic children often fail.\nFalse Photograph: Measures tracking physical states (object logic). Autistic children often excel." },
-  { id: 6, category: "Social Cognition", type: "bidirectional", front: "Chameleon Effect", back: "The spontaneous, unconscious mimicry of others' postures and gestures. Facilitates smooth interactions and is stronger in highly empathetic people." },
-  { id: 7, category: "Social Cognition", type: "bidirectional", front: "Fundamental Attribution Error (FAE)", back: "The tendency to over-emphasize internal personality traits and under-emphasize situational factors when explaining someone else's behavior." },
-  { id: 8, category: "Social Cognition", type: "list", front: "Three ways we 'Mind-Meld' (Outward / Me -> Others)", back: "1. Language (70-80% of conversation is about others)\n2. Emotion (broadcasting internal states)\n3. Teaching (aligning another's knowledge with your own)" },
-  { id: 33, category: "Social Cognition", type: "basic", front: "Pareidolia (Perceiving Faces Everywhere)", back: "The human hypersensitive face detection system. We see faces in inanimate objects because our survival depends on not missing real people (a 'false positive' is safer)." },
-  { id: 34, category: "Social Cognition", type: "basic", front: "Mind in the Eyes Test", back: "A test of social cognition measuring the ability to read complex emotions from just photos of eyes. Individuals with autism typically score lower on this test." },
-  { id: 46, category: "Social Cognition", type: "list", front: "Dennett's Three Stances", back: "1. Physical Stance (Understanding things via physics/chemistry)\n2. Design Stance (Understanding things via their purpose/function)\n3. Intentional Stance (Treating things as having minds, beliefs, and intentions)" },
-
-  // --- GROUPS ---
-  { id: 9, category: "Groups", type: "basic", front: "Asch Line Experiment: Finding & Lesson", back: "Finding: 70% of participants conformed to the group's wrong answer at least once.\nLesson: Conformity drops drastically if there is just one 'fellow dissenter' or ally." },
-  { id: 10, category: "Groups", type: "basic", front: "Milgram Shock Study: Finding & Lesson", back: "Finding: Over 50% administered potentially lethal shocks.\nLesson: Shows extreme Obedience to Authority. Obedience drops when proximity to the victim increases or a fellow dissenter stops." },
-  { id: 11, category: "Groups", type: "basic", front: "Stanford Prison Experiment: Lesson", back: "Shows conformity to expected roles. People internalize the behaviors expected of their social roles (Guards vs. Prisoners), overriding personal character." },
-  { id: 12, category: "Groups", type: "bidirectional", front: "Bystander Effect (Diffusion of Responsibility)", back: "The tendency for individuals to feel less personal responsibility to act in an emergency when other people are present (e.g., Kitty Genovese case)." },
-  { id: 13, category: "Groups", type: "bidirectional", front: "Norm of Reciprocity", back: "The social rule that we should benefit those who benefit us. (Forms the basis of the 'door-in-the-face' technique)." },
-  { id: 14, category: "Groups", type: "bidirectional", front: "Norm of Fairness", back: "Shared standards of equality. Demonstrated by the Ultimatum Game, where Player 2 will reject an unfair split (like 80/20) just to punish Player 1." },
-  { id: 47, category: "Groups", type: "basic", front: "Door-in-the-face Technique", back: "Making a large request that gets rejected, which makes the person more likely to agree to a subsequent smaller request (because they feel they should reciprocate your 'concession')." },
-  { id: 48, category: "Groups", type: "basic", front: "The Ultimatum Game", back: "Player 1 offers a split of money. If Player 2 rejects it, both get nothing. People routinely reject unfair splits (like 80/20) to punish Player 1, proving humans value fairness over pure self-interest." },
-
-  // --- PREJUDICE ---
-  { id: 15, category: "Prejudice", type: "bidirectional", front: "Minimal Group Paradigm (Tajfel)", back: "Shows humans favor their 'in-group' and choose 'Maximum Difference' over fairness, even when groups are based on meaningless criteria (like abstract art preferences)." },
-  { id: 16, category: "Prejudice", type: "basic", front: "Robbers Cave Experiment: The Solution", back: "Hostility between the 'Rattlers' and 'Eagles' was only reduced through Superordinate Goals—tasks requiring both groups to cooperate to succeed." },
-  { id: 17, category: "Prejudice", type: "list", front: "The 3 Features of Quality Contact (Contact Hypothesis)", back: "1. Personal Interaction\n2. Equal Status between groups\n3. Cooperation between groups" },
-  { id: 18, category: "Prejudice", type: "comparison", front: "Implicit vs. Explicit Bias", back: "Explicit: Conscious, verbalized, predicts things you say.\nImplicit: Unconscious, automatic, predicts non-verbal behavior/actions (e.g., resume callback rates)." },
-  { id: 19, category: "Prejudice", type: "bidirectional", front: "Stereotype Content Model (SCM)", back: "A framework that evaluates social groups based on two dimensions: Warmth and Competence (triggering emotions like Pity, Pride, Envy, Disgust)." },
-  { id: 20, category: "Prejudice", type: "list", front: "Four Strategies to Reduce Discrimination", back: "1. Motivation to act egalitarian (slow down!)\n2. Sharing a common identity (superordinate goals)\n3. Positive contact (Contact hypothesis)\n4. Changing systems (e.g., blind resumes)" },
-  { id: 35, category: "Prejudice", type: "comparison", front: "Hostile vs. Benevolent Sexism", back: "Hostile Sexism: Negative, insulting views of women.\nBenevolent Sexism: Seemingly positive but patronizing views that 'put women on a pedestal'." },
-  { id: 36, category: "Prejudice", type: "basic", front: "Implicit Association Test (IAT)", back: "Measures implicit bias by timing how quickly you associate certain groups (e.g., White or Black faces) with 'Good' or 'Bad' words." },
-  { id: 37, category: "Prejudice", type: "basic", front: "Resume Study (Bertrand & Mullainathan)", back: "Tested racial discrimination in hiring. Showed that resumes with 'White-sounding' names received 50% more callbacks than identical resumes with 'Black-sounding' names." },
-  { id: 49, category: "Prejudice", type: "bidirectional", front: "Realistic Conflict Theory", back: "The idea that prejudice and discrimination arise naturally because groups are competing for limited, real-world resources." },
-  { id: 50, category: "Prejudice", type: "basic", front: "\"Women are best at caregiving and men should protect them financially.\" What type of sexism and SCM stereotype does this represent?", back: "Sexism: Benevolent Sexism\nSCM Stereotype: High warmth, but low competence." },
-
-  // --- MORALITY ---
-  { id: 21, category: "Morality", type: "comparison", front: "Kant vs. Hume on Morality (Neural mapping)", back: "Kant (Categorical Imperative): Based on Reason and universal law. Mapped to the Cerebral Cortex.\nHume (Sentimentalism): Based on Passions and emotions. Mapped to the Limbic System." },
-  { id: 22, category: "Morality", type: "list", front: "Kohlberg's 3 Levels of Moral Development", back: "1. Pre-Conventional (Avoiding punishment / Self-interest)\n2. Conventional (Social approval / Laws of society)\n3. Post-Conventional (Social contracts / Universal principles of justice)" },
-  { id: 23, category: "Morality", type: "comparison", front: "Turiel's Social Domain Theory", back: "Moral Rules: Relate to physical/emotional harm and fairness. Authority-independent.\nConventional Rules: Relate to social customs (dress, food, manners). Authority-dependent." },
-  { id: 24, category: "Morality", type: "bidirectional", front: "Haidt's Elephant and Rider Metaphor", back: "The Elephant is our sub-conscious mind that makes automatic moral judgments. The Rider is our conscious mind that rationalizes the judgment after the fact." },
-  { id: 38, category: "Morality", type: "comparison", front: "Piaget's Two Stages of Morality", back: "Heteronomous: Based on unilateral respect for authority, fixed rules, and outcomes.\nAutonomous: Based on cooperation, fairness, consensus, and intentions." },
-  { id: 39, category: "Morality", type: "basic", front: "The Heinz Dilemma", back: "A moral dilemma used by Kohlberg. He wasn't interested in whether you thought Heinz should steal the drug, but rather the *reasoning* behind your answer." },
-  { id: 40, category: "Morality", type: "comparison", front: "Trolley Problem: Switch vs. Footbridge", back: "Switch: Triggers the Cerebral Cortex (logical, utilitarian calculation of 5 > 1).\nFootbridge: Triggers the Limbic System (Humean emotional reaction against pushing/physical violence)." },
-  { id: 41, category: "Morality", type: "basic", front: "Online Moral Outrage & Contagion", back: "Moral outrage triggers are often shared online, creating 'outrage cascades' through digital networks that serve to divide people into polarized groups." },
-  { id: 51, category: "Morality", type: "basic", front: "Immanuel Kant's Categorical Imperative", back: "Act only according to rules that you would want to become a universal law for all rational beings. (i.e., Never treat a person merely as a means to an end)." },
-  { id: 52, category: "Morality", type: "comparison", front: "Piaget: Outcomes vs. Intentions", back: "Younger children: Focus on the OUTCOME (breaking 5 glasses accidentally is worse than 1 on purpose).\nOlder children: Focus on the INTENTION (trying to steal is worse than trying to help)." },
-
-  // --- DISORDERS ---
-  { id: 25, category: "Disorders", type: "comparison", front: "Medical Model: Signs vs. Symptoms", back: "Signs: Objectively observed indicators (what the clinician sees).\nSymptoms: Subjectively reported behaviors, thoughts, and emotions (what the patient feels)." },
-  { id: 26, category: "Disorders", type: "bidirectional", front: "Diathesis-Stress Model", back: "Explains psychological disorders as the result of a predisposition (diathesis) that remains unexpressed until triggered by an external trigger (stress)." },
-  { id: 27, category: "Disorders", type: "comparison", front: "OCD: Obsession vs. Compulsion", back: "Obsession: Repetitive, intrusive thoughts that create severe anxiety.\nCompulsion: Ritualistic behaviors designed to fend off those thoughts and reduce the anxiety." },
-  { id: 28, category: "Disorders", type: "comparison", front: "Schizophrenia: Positive vs. Negative Symptoms", back: "Positive: Excesses present in patients but absent in healthy people (hallucinations, delusions).\nNegative: Deficits in normal emotions and behaviors (apathy, social withdrawal, poverty of speech)." },
-  { id: 29, category: "Disorders", type: "list", front: "Helplessness Theory (Depressive Attributions)", back: "Prone individuals automatically attribute negative experiences to causes that are:\n1. Internal (my fault)\n2. Stable (will never change)\n3. Global (affects every part of life)" },
-  { id: 30, category: "Disorders", type: "list", front: "PTSD Neural Correlates", back: "1. Heightened activity in the Amygdala (threat evaluation)\n2. Decreased activity in Medial Prefrontal Cortex (extinction of fear)\n3. Smaller Hippocampus (pre-existing condition increasing vulnerability)" },
-  { id: 31, category: "Disorders", type: "comparison", front: "Autism Spectrum Disorder: Empathizing vs. Systematizing", back: "Empathizing (Impaired): Knowing the mental states of others.\nSystematizing (Superior): Understanding the rules that organize the structure and function of objects." },
-  { id: 32, category: "Disorders", type: "bidirectional", front: "Preparedness Theory", back: "The evolutionary idea that people are instinctively predisposed toward certain fears (e.g., snakes and spiders) over others (e.g., flowers)." },
-  { id: 42, category: "Disorders", type: "comparison", front: "Panic Disorder vs. Agoraphobia", back: "Panic Disorder: Sudden, unexpected attacks of stark terror with physical symptoms.\nAgoraphobia: Fear of having a panic attack in a public place where escape or help might be difficult." },
-  { id: 43, category: "Disorders", type: "comparison", front: "Dysthymia vs. Double Depression", back: "Dysthymia: Similar to Major Depression but less severe and longer-lasting (at least 2 years).\nDouble Depression: When Major Depressive Disorder and Dysthymia co-occur." },
-  { id: 44, category: "Disorders", type: "basic", front: "Bipolar Disorder: Rapid Cycling", back: "Characterized by at least 4 mood episodes (either depressive or manic) every year. Affects about 10% of those with Bipolar Disorder and is more difficult to treat." },
-  { id: 45, category: "Disorders", type: "list", front: "ADHD Diagnostic Criteria", back: "Requires a persistent pattern of:\n1. Inattention (problems with sustained attention/memory) AND/OR\n2. Hyperactivity-impulsiveness (interrupting/inability to remain still)" },
-  { id: 53, category: "Disorders", type: "bidirectional", front: "Comorbidity", back: "The co-occurrence of two or more disorders in a single individual." },
-  { id: 54, category: "Disorders", type: "basic", front: "Sam (10) prefers playing alone, avoids eye contact, spins a pen repeatedly, insists on the same seat, and takes jokes literally. Diagnosis?", back: "Autism Spectrum Disorder (ASD).\nShows social communication deficits, repetitive behaviors, restricted interests, and insistence on sameness." },
-  { id: 55, category: "Disorders", type: "basic", front: "Jordan (12) cannot stay on task, loses items daily, shouts answers out of turn, and bounces on his heels constantly. Diagnosis?", back: "Attention-Deficit/Hyperactivity Disorder (ADHD) — Combined Presentation.\nShows both inattention (distracted, forgetful) and hyperactivity/impulsivity (restless, blurting out)." }
-];
-
-const App = () => {
-  const [cards, setCards] = useState(INITIAL_CARDS);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isFlipped, setIsFlipped] = useState(false);
-  const [filter, setFilter] = useState('All');
-  const [studyDirection, setStudyDirection] = useState('front'); 
-  
-  const [showImport, setShowImport] = useState(false);
-  const [importText, setImportText] = useState('');
-  const [viewMode, setViewMode] = useState('study');
-
-  const filteredCards = useMemo(() => {
-    if (filter === 'All') return cards;
-    return cards.filter(c => c.category === filter);
-  }, [cards, filter]);
-
-  const currentCard = filteredCards[currentIndex];
-  const categories = ['All', ...new Set(cards.map(c => c.category))];
-
-  // Logic for handling backwards/mixed study directions (only for bidirectional cards)
-  const isCurrentlyReversed = useMemo(() => {
-    if (!currentCard || currentCard.type !== 'bidirectional') return false;
-    if (studyDirection === 'back') return true;
-    if (studyDirection === 'mixed') return Math.random() > 0.5;
-    return false;
-  }, [currentCard, studyDirection, currentIndex]);
-
-  const displayFront = isCurrentlyReversed ? currentCard?.back : currentCard?.front;
-  const displayBack = isCurrentlyReversed ? currentCard?.front : currentCard?.back;
-
-  const handleNext = () => {
-    setIsFlipped(false);
-    setTimeout(() => {
-      setCurrentIndex((prev) => (prev + 1) % filteredCards.length);
-    }, 150); 
-  };
-
-  const handlePrev = () => {
-    setIsFlipped(false);
-    setTimeout(() => {
-      setCurrentIndex((prev) => (prev - 1 + filteredCards.length) % filteredCards.length);
-    }, 150);
-  };
-
-  const handleFlip = () => setIsFlipped(!isFlipped);
-
-  const handleImport = () => {
-    try {
-      const newCards = JSON.parse(importText);
-      if (Array.isArray(newCards)) {
-        const formattedCards = newCards.map((c, i) => ({
-          ...c,
-          id: Date.now() + i,
-          type: c.type || 'basic'
-        }));
-        setCards([...cards, ...formattedCards]);
-        setShowImport(false);
-        setImportText('');
-      }
-    } catch (e) {
-      alert("Invalid JSON format. Ensure properties and strings use double quotes.");
-    }
-  };
-
-  const getCategoryIcon = (cat) => {
-    switch(cat) {
-      case 'Social Cognition': return <Brain size={20} />;
-      case 'Groups': return <Users size={20} />;
-      case 'Prejudice': return <ShieldAlert size={20} />;
-      case 'Morality': return <Scale size={20} />;
-      case 'Disorders': return <Stethoscope size={20} />;
-      default: return <BookOpen size={20} />;
-    }
-  };
-
-  // Renders cleanly formatted lists and comparisons depending on card type
-  const renderCardContent = (text, type, isBackSide) => {
-    if (!text) return null;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Psychology Study Suite</title>
     
-    // Check if the current face needs formatting (prevents lists/grids showing up on the front if reversed)
-    const shouldFormat = isBackSide ? !isCurrentlyReversed : isCurrentlyReversed;
-
-    if (shouldFormat) {
-      if (type === 'comparison') {
-        const parts = text.split('\n');
-        return (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full text-left">
-            {parts.map((part, i) => {
-              const [title, desc] = part.split(': ');
-              return (
-                <div key={i} className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                  <strong className="block text-indigo-700 mb-1">{title}</strong>
-                  <span className="text-slate-600 text-[0.95rem]">{desc || part}</span>
-                </div>
-              );
-            })}
-          </div>
-        );
-      }
-      
-      if (type === 'list') {
-        const parts = text.split('\n');
-        const intro = parts[0].match(/^\d\./) ? null : parts[0];
-        const listItems = intro ? parts.slice(1) : parts;
-        
-        return (
-          <div className="text-left w-full max-w-lg mx-auto">
-            {intro && <p className="mb-3 text-slate-700 font-medium">{intro}</p>}
-            <ul className="space-y-2">
-              {listItems.map((item, i) => (
-                <li key={i} className="flex gap-3 items-start bg-slate-50 p-3 rounded-lg border border-slate-100 shadow-sm">
-                  <span className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 font-bold text-sm">
-                    {item.match(/^\d\./) ? item.charAt(0) : '•'}
-                  </span>
-                  <span className="text-slate-600 text-[0.95rem] mt-0.5 leading-snug">
-                    {item.replace(/^\d\.\s*/, '')}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        );
-      }
-    }
-
-    return <div className="whitespace-pre-wrap leading-relaxed">{text}</div>;
-  };
-
-  return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans p-4 md:p-8">
-      {/* Header */}
-      <header className="max-w-5xl mx-auto mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-        <div>
-          <h1 className="text-2xl font-bold text-indigo-900 flex items-center gap-2">
-            <Brain className="text-indigo-600" />
-            Psychology Study Suite
-          </h1>
-          <p className="text-slate-500 text-sm mt-1">Exam 3: Complete Deck (55 Cards)</p>
-        </div>
-        <div className="flex flex-wrap gap-2 items-center">
-          
-          <div className="flex items-center bg-slate-100 p-1 rounded-lg border border-slate-200 mr-2">
-            <span className="text-xs font-bold text-slate-400 px-2 uppercase tracking-wide">Mode</span>
-            <select 
-              value={studyDirection} 
-              onChange={(e) => setStudyDirection(e.target.value)}
-              className="bg-transparent text-sm font-medium text-slate-700 outline-none cursor-pointer"
-              title="Only applies to Bidirectional cards"
-            >
-              <option value="front">Term → Definition</option>
-              <option value="back">Definition → Term</option>
-              <option value="mixed">Mixed (Shuffle)</option>
-            </select>
-          </div>
-
-          <button 
-            onClick={() => setViewMode(viewMode === 'study' ? 'list' : 'study')}
-            className="flex items-center gap-2 px-3 py-2 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition-colors text-sm font-bold"
-          >
-            {viewMode === 'study' ? <Layout size={16} /> : <BookOpen size={16} />}
-            {viewMode === 'study' ? 'List View' : 'Study View'}
-          </button>
-          <button 
-            onClick={() => setShowImport(true)}
-            className="flex items-center gap-2 px-3 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors text-sm font-bold"
-          >
-            <Upload size={16} />
-            Import
-          </button>
-        </div>
-      </header>
-
-      <main className="max-w-5xl mx-auto">
-        {/* Filters */}
-        <div className="flex flex-wrap gap-2 mb-8 justify-center">
-          {categories.map(cat => (
-            <button
-              key={cat}
-              onClick={() => { setFilter(cat); setCurrentIndex(0); setIsFlipped(false); }}
-              className={`px-4 py-2 rounded-full text-sm font-bold transition-all flex items-center gap-2 ${
-                filter === cat 
-                ? 'bg-indigo-600 text-white shadow-md transform scale-105' 
-                : 'bg-white text-slate-600 border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50'
-              }`}
-            >
-              {filter === cat && getCategoryIcon(cat)}
-              {cat}
-            </button>
-          ))}
-        </div>
-
-        {viewMode === 'study' ? (
-          <>
-            {/* Flashcard View (Strict CSS 3D Transforms) */}
-            <div className="relative perspective-1000 max-w-3xl mx-auto h-[450px]">
-              <div 
-                onClick={handleFlip}
-                className={`w-full h-full cursor-pointer transition-transform duration-500 transform-style-3d ${
-                  isFlipped ? 'rotate-y-180' : ''
-                }`}
-              >
-                {/* Front of Card */}
-                <div className="absolute inset-0 backface-hidden w-full h-full bg-white rounded-3xl shadow-xl border border-slate-200 flex flex-col items-center justify-center p-6 md:p-10 text-center z-20">
-                  <div className="absolute top-6 flex items-center justify-between w-full px-8">
-                    <span className="px-3 py-1 bg-indigo-50 text-indigo-600 text-xs font-bold rounded-full uppercase tracking-wider flex items-center gap-1.5">
-                      {getCategoryIcon(currentCard?.category)} {currentCard?.category}
-                    </span>
-                    {currentCard?.type === 'bidirectional' && (
-                       <span className="text-slate-300" title="Bidirectional Card"><Shuffle size={16}/></span>
-                    )}
-                  </div>
-                  
-                  <div className="text-2xl md:text-3xl font-semibold text-slate-800 w-full overflow-y-auto max-h-[250px] custom-scrollbar">
-                    {renderCardContent(displayFront, currentCard?.type, false)}
-                  </div>
-                  
-                  <p className="absolute bottom-6 text-slate-400 text-sm font-medium flex items-center gap-2">
-                    <RefreshCw size={14} /> Click anywhere to flip
-                  </p>
-                </div>
-
-                {/* Back of Card (Rotated by default, rendered visible when container flips) */}
-                <div className="absolute inset-0 backface-hidden rotate-y-180 w-full h-full bg-white rounded-3xl shadow-xl border border-slate-200 flex flex-col items-center justify-center p-6 md:p-10 text-center z-10">
-                  <span className="absolute top-6 px-3 py-1 bg-emerald-50 text-emerald-600 text-xs font-bold rounded-full uppercase tracking-wider">
-                    ANSWER
-                  </span>
-                  
-                  <div className="text-lg md:text-xl text-slate-700 font-medium w-full overflow-y-auto max-h-[300px] custom-scrollbar">
-                    {renderCardContent(displayBack, currentCard?.type, true)}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Navigation Controls */}
-            <div className="flex items-center justify-center mt-10 gap-4 md:gap-8">
-              <button 
-                onClick={handlePrev}
-                className="p-4 bg-white border border-slate-200 text-slate-600 rounded-2xl hover:bg-slate-50 hover:text-indigo-600 shadow-sm transition-all active:scale-95"
-              >
-                <ArrowLeft size={24} />
-              </button>
-
-              <div className="flex gap-3">
-                <button 
-                  onClick={handleNext}
-                  className="flex flex-col md:flex-row items-center justify-center gap-2 px-6 py-3 min-w-[120px] bg-emerald-500 text-white rounded-2xl font-bold shadow-lg shadow-emerald-200 hover:bg-emerald-600 hover:-translate-y-1 transition-all active:scale-95"
-                >
-                  <CheckCircle size={20} /> <span className="hidden md:inline">I know this</span>
-                </button>
-                <button 
-                  onClick={handleNext}
-                  className="flex flex-col md:flex-row items-center justify-center gap-2 px-6 py-3 min-w-[120px] bg-amber-500 text-white rounded-2xl font-bold shadow-lg shadow-amber-200 hover:bg-amber-600 hover:-translate-y-1 transition-all active:scale-95"
-                >
-                  <XCircle size={20} /> <span className="hidden md:inline">Needs review</span>
-                </button>
-              </div>
-
-              <button 
-                onClick={handleNext}
-                className="p-4 bg-white border border-slate-200 text-slate-600 rounded-2xl hover:bg-slate-50 hover:text-indigo-600 shadow-sm transition-all active:scale-95"
-              >
-                <ArrowRight size={24} />
-              </button>
-            </div>
-
-            {/* Progress Bar */}
-            <div className="mt-8 max-w-sm mx-auto">
-              <div className="flex justify-between text-xs font-bold text-slate-400 mb-2 uppercase tracking-wide">
-                <span>Card {currentIndex + 1}</span>
-                <span>Total {filteredCards.length}</span>
-              </div>
-              <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-indigo-500 transition-all duration-300"
-                  style={{ width: `${((currentIndex + 1) / filteredCards.length) * 100}%` }}
-                />
-              </div>
-            </div>
-          </>
-        ) : (
-          /* List View */
-          <div className="grid gap-6 md:grid-cols-2">
-            {filteredCards.map((card, idx) => (
-              <div key={card.id} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full">
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
-                    {getCategoryIcon(card.category)}
-                  </span>
-                  <span className="text-xs font-bold text-indigo-400 uppercase tracking-wide">{card.category}</span>
-                  {card.type && (
-                    <span className="ml-auto text-[10px] font-bold text-slate-300 uppercase px-2 py-1 bg-slate-50 rounded">
-                      {card.type}
-                    </span>
-                  )}
-                </div>
-                <h3 className="text-lg font-bold text-slate-800 mb-4">{card.front}</h3>
-                <div className="mt-auto pt-4 border-t border-slate-100">
-                  {renderCardContent(card.back, card.type, true)}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </main>
-
-      {/* Import Modal */}
-      {showImport && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-2xl rounded-3xl p-8 shadow-2xl">
-            <h2 className="text-2xl font-bold text-slate-800 mb-2">Import Custom Cards</h2>
-            <p className="text-slate-500 mb-6 text-sm">
-              Paste array data in JSON format. Allowed types: <code className="bg-slate-100 px-1 rounded">basic</code>, <code className="bg-slate-100 px-1 rounded">bidirectional</code>, <code className="bg-slate-100 px-1 rounded">list</code>, <code className="bg-slate-100 px-1 rounded">comparison</code>.
-            </p>
-            <textarea
-              value={importText}
-              onChange={(e) => setImportText(e.target.value)}
-              className="w-full h-64 p-4 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm mb-6 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-              placeholder='[
-  {
-    "front": "What does the Amygdala do?", 
-    "back": "Evaluates threatening information and processes fear.", 
-    "category": "Disorders",
-    "type": "basic"
-  }
-]'
-            />
-            <div className="flex justify-end gap-3">
-              <button 
-                onClick={() => setShowImport(false)}
-                className="px-6 py-2.5 text-slate-600 font-bold hover:bg-slate-100 rounded-xl transition-colors"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={handleImport}
-                className="px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200"
-              >
-                Add Cards
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Strict Perspective Styles & Scrollbar Customization */}
-      <style>{`
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel for compiling JSX in the browser -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
         .perspective-1000 { perspective: 1000px; }
         .transform-style-3d { transform-style: preserve-3d; }
         .rotate-y-180 { transform: rotateY(180deg); }
@@ -447,9 +36,421 @@ const App = () => {
           background-color: #cbd5e1;
           border-radius: 20px;
         }
-      `}</style>
-    </div>
-  );
-};
+        body { font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+    
+    <div id="root"></div>
 
-export default App;
+    <script type="text/babel">
+        const { useState, useMemo } = React;
+
+        const INITIAL_CARDS = [
+          // --- SOCIAL COGNITION ---
+          { id: 1, category: "Social Cognition", type: "basic", front: "What part of the brain is the 'neural alarm system' for social pain?", back: "Anterior Cingulate Cortex (ACC).\nIt processes the 'distress' component of both physical and social pain (like exclusion)." },
+          { id: 2, category: "Social Cognition", type: "bidirectional", front: "Social Brain Evolution Hypothesis", back: "The theory that the primary driver for human brain expansion (neocortex ratio) was the need to manage complex group dynamics and social relationships." },
+          { id: 3, category: "Social Cognition", type: "comparison", front: "Shape Chasing (Heider & Simmel): Typical vs. Autistic response", back: "Typical: Create a social narrative (e.g., 'The big triangle is a bully').\nAutistic: Provide literal, geometric descriptions (e.g., 'The triangle went inside the rectangle')." },
+          { id: 4, category: "Social Cognition", type: "bidirectional", front: "Point-Light Walkers", back: "The phenomenon where humans instantly recognize biological motion and social information from just a few moving dots." },
+          { id: 5, category: "Social Cognition", type: "comparison", front: "False Belief Test vs. False Photograph Test", back: "False Belief (Sally-Anne): Measures tracking mental states (social logic). Autistic children often fail.\nFalse Photograph: Measures tracking physical states (object logic). Autistic children often excel." },
+          { id: 6, category: "Social Cognition", type: "bidirectional", front: "Chameleon Effect", back: "The spontaneous, unconscious mimicry of others' postures and gestures. Facilitates smooth interactions and is stronger in highly empathetic people." },
+          { id: 7, category: "Social Cognition", type: "bidirectional", front: "Fundamental Attribution Error (FAE)", back: "The tendency to over-emphasize internal personality traits and under-emphasize situational factors when explaining someone else's behavior." },
+          { id: 8, category: "Social Cognition", type: "list", front: "Three ways we 'Mind-Meld' (Outward / Me -> Others)", back: "1. Language (70-80% of conversation is about others)\n2. Emotion (broadcasting internal states)\n3. Teaching (aligning another's knowledge with your own)" },
+          { id: 33, category: "Social Cognition", type: "basic", front: "Pareidolia (Perceiving Faces Everywhere)", back: "The human hypersensitive face detection system. We see faces in inanimate objects because our survival depends on not missing real people (a 'false positive' is safer)." },
+          { id: 34, category: "Social Cognition", type: "basic", front: "Mind in the Eyes Test", back: "A test of social cognition measuring the ability to read complex emotions from just photos of eyes. Individuals with autism typically score lower on this test." },
+          { id: 46, category: "Social Cognition", type: "list", front: "Dennett's Three Stances", back: "1. Physical Stance (Understanding things via physics/chemistry)\n2. Design Stance (Understanding things via their purpose/function)\n3. Intentional Stance (Treating things as having minds, beliefs, and intentions)" },
+
+          // --- GROUPS ---
+          { id: 9, category: "Groups", type: "basic", front: "Asch Line Experiment: Finding & Lesson", back: "Finding: 70% of participants conformed to the group's wrong answer at least once.\nLesson: Conformity drops drastically if there is just one 'fellow dissenter' or ally." },
+          { id: 10, category: "Groups", type: "basic", front: "Milgram Shock Study: Finding & Lesson", back: "Finding: Over 50% administered potentially lethal shocks.\nLesson: Shows extreme Obedience to Authority. Obedience drops when proximity to the victim increases or a fellow dissenter stops." },
+          { id: 11, category: "Groups", type: "basic", front: "Stanford Prison Experiment: Lesson", back: "Shows conformity to expected roles. People internalize the behaviors expected of their social roles (Guards vs. Prisoners), overriding personal character." },
+          { id: 12, category: "Groups", type: "bidirectional", front: "Bystander Effect (Diffusion of Responsibility)", back: "The tendency for individuals to feel less personal responsibility to act in an emergency when other people are present (e.g., Kitty Genovese case)." },
+          { id: 13, category: "Groups", type: "bidirectional", front: "Norm of Reciprocity", back: "The social rule that we should benefit those who benefit us. (Forms the basis of the 'door-in-the-face' technique)." },
+          { id: 14, category: "Groups", type: "bidirectional", front: "Norm of Fairness", back: "Shared standards of equality. Demonstrated by the Ultimatum Game, where Player 2 will reject an unfair split (like 80/20) just to punish Player 1." },
+          { id: 47, category: "Groups", type: "basic", front: "Door-in-the-face Technique", back: "Making a large request that gets rejected, which makes the person more likely to agree to a subsequent smaller request (because they feel they should reciprocate your 'concession')." },
+          { id: 48, category: "Groups", type: "basic", front: "The Ultimatum Game", back: "Player 1 offers a split of money. If Player 2 rejects it, both get nothing. People routinely reject unfair splits (like 80/20) to punish Player 1, proving humans value fairness over pure self-interest." },
+
+          // --- PREJUDICE ---
+          { id: 15, category: "Prejudice", type: "bidirectional", front: "Minimal Group Paradigm (Tajfel)", back: "Shows humans favor their 'in-group' and choose 'Maximum Difference' over fairness, even when groups are based on meaningless criteria (like abstract art preferences)." },
+          { id: 16, category: "Prejudice", type: "basic", front: "Robbers Cave Experiment: The Solution", back: "Hostility between the 'Rattlers' and 'Eagles' was only reduced through Superordinate Goals—tasks requiring both groups to cooperate to succeed." },
+          { id: 17, category: "Prejudice", type: "list", front: "The 3 Features of Quality Contact (Contact Hypothesis)", back: "1. Personal Interaction\n2. Equal Status between groups\n3. Cooperation between groups" },
+          { id: 18, category: "Prejudice", type: "comparison", front: "Implicit vs. Explicit Bias", back: "Explicit: Conscious, verbalized, predicts things you say.\nImplicit: Unconscious, automatic, predicts non-verbal behavior/actions (e.g., resume callback rates)." },
+          { id: 19, category: "Prejudice", type: "bidirectional", front: "Stereotype Content Model (SCM)", back: "A framework that evaluates social groups based on two dimensions: Warmth and Competence (triggering emotions like Pity, Pride, Envy, Disgust)." },
+          { id: 20, category: "Prejudice", type: "list", front: "Four Strategies to Reduce Discrimination", back: "1. Motivation to act egalitarian (slow down!)\n2. Sharing a common identity (superordinate goals)\n3. Positive contact (Contact hypothesis)\n4. Changing systems (e.g., blind resumes)" },
+          { id: 35, category: "Prejudice", type: "comparison", front: "Hostile vs. Benevolent Sexism", back: "Hostile Sexism: Negative, insulting views of women.\nBenevolent Sexism: Seemingly positive but patronizing views that 'put women on a pedestal'." },
+          { id: 36, category: "Prejudice", type: "basic", front: "Implicit Association Test (IAT)", back: "Measures implicit bias by timing how quickly you associate certain groups (e.g., White or Black faces) with 'Good' or 'Bad' words." },
+          { id: 37, category: "Prejudice", type: "basic", front: "Resume Study (Bertrand & Mullainathan)", back: "Tested racial discrimination in hiring. Showed that resumes with 'White-sounding' names received 50% more callbacks than identical resumes with 'Black-sounding' names." },
+          { id: 49, category: "Prejudice", type: "bidirectional", front: "Realistic Conflict Theory", back: "The idea that prejudice and discrimination arise naturally because groups are competing for limited, real-world resources." },
+          { id: 50, category: "Prejudice", type: "basic", front: "\"Women are best at caregiving and men should protect them financially.\" What type of sexism and SCM stereotype does this represent?", back: "Sexism: Benevolent Sexism\nSCM Stereotype: High warmth, but low competence." },
+
+          // --- MORALITY ---
+          { id: 21, category: "Morality", type: "comparison", front: "Kant vs. Hume on Morality (Neural mapping)", back: "Kant (Categorical Imperative): Based on Reason and universal law. Mapped to the Cerebral Cortex.\nHume (Sentimentalism): Based on Passions and emotions. Mapped to the Limbic System." },
+          { id: 22, category: "Morality", type: "list", front: "Kohlberg's 3 Levels of Moral Development", back: "1. Pre-Conventional (Avoiding punishment / Self-interest)\n2. Conventional (Social approval / Laws of society)\n3. Post-Conventional (Social contracts / Universal principles of justice)" },
+          { id: 23, category: "Morality", type: "comparison", front: "Turiel's Social Domain Theory", back: "Moral Rules: Relate to physical/emotional harm and fairness. Authority-independent.\nConventional Rules: Relate to social customs (dress, food, manners). Authority-dependent." },
+          { id: 24, category: "Morality", type: "bidirectional", front: "Haidt's Elephant and Rider Metaphor", back: "The Elephant is our sub-conscious mind that makes automatic moral judgments. The Rider is our conscious mind that rationalizes the judgment after the fact." },
+          { id: 38, category: "Morality", type: "comparison", front: "Piaget's Two Stages of Morality", back: "Heteronomous: Based on unilateral respect for authority, fixed rules, and outcomes.\nAutonomous: Based on cooperation, fairness, consensus, and intentions." },
+          { id: 39, category: "Morality", type: "basic", front: "The Heinz Dilemma", back: "A moral dilemma used by Kohlberg. He wasn't interested in whether you thought Heinz should steal the drug, but rather the *reasoning* behind your answer." },
+          { id: 40, category: "Morality", type: "comparison", front: "Trolley Problem: Switch vs. Footbridge", back: "Switch: Triggers the Cerebral Cortex (logical, utilitarian calculation of 5 > 1).\nFootbridge: Triggers the Limbic System (Humean emotional reaction against pushing/physical violence)." },
+          { id: 41, category: "Morality", type: "basic", front: "Online Moral Outrage & Contagion", back: "Moral outrage triggers are often shared online, creating 'outrage cascades' through digital networks that serve to divide people into polarized groups." },
+          { id: 51, category: "Morality", type: "basic", front: "Immanuel Kant's Categorical Imperative", back: "Act only according to rules that you would want to become a universal law for all rational beings. (i.e., Never treat a person merely as a means to an end)." },
+          { id: 52, category: "Morality", type: "comparison", front: "Piaget: Outcomes vs. Intentions", back: "Younger children: Focus on the OUTCOME (breaking 5 glasses accidentally is worse than 1 on purpose).\nOlder children: Focus on the INTENTION (trying to steal is worse than trying to help)." },
+
+          // --- DISORDERS ---
+          { id: 25, category: "Disorders", type: "comparison", front: "Medical Model: Signs vs. Symptoms", back: "Signs: Objectively observed indicators (what the clinician sees).\nSymptoms: Subjectively reported behaviors, thoughts, and emotions (what the patient feels)." },
+          { id: 26, category: "Disorders", type: "bidirectional", front: "Diathesis-Stress Model", back: "Explains psychological disorders as the result of a predisposition (diathesis) that remains unexpressed until triggered by an external trigger (stress)." },
+          { id: 27, category: "Disorders", type: "comparison", front: "OCD: Obsession vs. Compulsion", back: "Obsession: Repetitive, intrusive thoughts that create severe anxiety.\nCompulsion: Ritualistic behaviors designed to fend off those thoughts and reduce the anxiety." },
+          { id: 28, category: "Disorders", type: "comparison", front: "Schizophrenia: Positive vs. Negative Symptoms", back: "Positive: Excesses present in patients but absent in healthy people (hallucinations, delusions).\nNegative: Deficits in normal emotions and behaviors (apathy, social withdrawal, poverty of speech)." },
+          { id: 29, category: "Disorders", type: "list", front: "Helplessness Theory (Depressive Attributions)", back: "Prone individuals automatically attribute negative experiences to causes that are:\n1. Internal (my fault)\n2. Stable (will never change)\n3. Global (affects every part of life)" },
+          { id: 30, category: "Disorders", type: "list", front: "PTSD Neural Correlates", back: "1. Heightened activity in the Amygdala (threat evaluation)\n2. Decreased activity in Medial Prefrontal Cortex (extinction of fear)\n3. Smaller Hippocampus (pre-existing condition increasing vulnerability)" },
+          { id: 31, category: "Disorders", type: "comparison", front: "Autism Spectrum Disorder: Empathizing vs. Systematizing", back: "Empathizing (Impaired): Knowing the mental states of others.\nSystematizing (Superior): Understanding the rules that organize the structure and function of objects." },
+          { id: 32, category: "Disorders", type: "bidirectional", front: "Preparedness Theory", back: "The evolutionary idea that people are instinctively predisposed toward certain fears (e.g., snakes and spiders) over others (e.g., flowers)." },
+          { id: 42, category: "Disorders", type: "comparison", front: "Panic Disorder vs. Agoraphobia", back: "Panic Disorder: Sudden, unexpected attacks of stark terror with physical symptoms.\nAgoraphobia: Fear of having a panic attack in a public place where escape or help might be difficult." },
+          { id: 43, category: "Disorders", type: "comparison", front: "Dysthymia vs. Double Depression", back: "Dysthymia: Similar to Major Depression but less severe and longer-lasting (at least 2 years).\nDouble Depression: When Major Depressive Disorder and Dysthymia co-occur." },
+          { id: 44, category: "Disorders", type: "basic", front: "Bipolar Disorder: Rapid Cycling", back: "Characterized by at least 4 mood episodes (either depressive or manic) every year. Affects about 10% of those with Bipolar Disorder and is more difficult to treat." },
+          { id: 45, category: "Disorders", type: "list", front: "ADHD Diagnostic Criteria", back: "Requires a persistent pattern of:\n1. Inattention (problems with sustained attention/memory) AND/OR\n2. Hyperactivity-impulsiveness (interrupting/inability to remain still)" },
+          { id: 53, category: "Disorders", type: "bidirectional", front: "Comorbidity", back: "The co-occurrence of two or more disorders in a single individual." },
+          { id: 54, category: "Disorders", type: "basic", front: "Sam (10) prefers playing alone, avoids eye contact, spins a pen repeatedly, insists on the same seat, and takes jokes literally. Diagnosis?", back: "Autism Spectrum Disorder (ASD).\nShows social communication deficits, repetitive behaviors, restricted interests, and insistence on sameness." },
+          { id: 55, category: "Disorders", type: "basic", front: "Jordan (12) cannot stay on task, loses items daily, shouts answers out of turn, and bounces on his heels constantly. Diagnosis?", back: "Attention-Deficit/Hyperactivity Disorder (ADHD) — Combined Presentation.\nShows both inattention (distracted, forgetful) and hyperactivity/impulsivity (restless, blurting out)." }
+        ];
+
+        const App = () => {
+          const [cards, setCards] = useState(INITIAL_CARDS);
+          const [currentIndex, setCurrentIndex] = useState(0);
+          const [isFlipped, setIsFlipped] = useState(false);
+          const [filter, setFilter] = useState('All');
+          const [studyDirection, setStudyDirection] = useState('front'); 
+          
+          const [showImport, setShowImport] = useState(false);
+          const [importText, setImportText] = useState('');
+          const [viewMode, setViewMode] = useState('study');
+
+          const filteredCards = useMemo(() => {
+            if (filter === 'All') return cards;
+            return cards.filter(c => c.category === filter);
+          }, [cards, filter]);
+
+          const currentCard = filteredCards[currentIndex];
+          const categories = ['All', ...new Set(cards.map(c => c.category))];
+
+          const isCurrentlyReversed = useMemo(() => {
+            if (!currentCard || currentCard.type !== 'bidirectional') return false;
+            if (studyDirection === 'back') return true;
+            if (studyDirection === 'mixed') return Math.random() > 0.5;
+            return false;
+          }, [currentCard, studyDirection, currentIndex]);
+
+          const displayFront = isCurrentlyReversed ? currentCard?.back : currentCard?.front;
+          const displayBack = isCurrentlyReversed ? currentCard?.front : currentCard?.back;
+
+          const handleNext = () => {
+            setIsFlipped(false);
+            setTimeout(() => {
+              setCurrentIndex((prev) => (prev + 1) % filteredCards.length);
+            }, 150); 
+          };
+
+          const handlePrev = () => {
+            setIsFlipped(false);
+            setTimeout(() => {
+              setCurrentIndex((prev) => (prev - 1 + filteredCards.length) % filteredCards.length);
+            }, 150);
+          };
+
+          const handleFlip = () => setIsFlipped(!isFlipped);
+
+          const handleImport = () => {
+            try {
+              const newCards = JSON.parse(importText);
+              if (Array.isArray(newCards)) {
+                const formattedCards = newCards.map((c, i) => ({
+                  ...c,
+                  id: Date.now() + i,
+                  type: c.type || 'basic'
+                }));
+                setCards([...cards, ...formattedCards]);
+                setShowImport(false);
+                setImportText('');
+              }
+            } catch (e) {
+              alert("Invalid JSON format. Ensure properties and strings use double quotes.");
+            }
+          };
+
+          const getCategoryIcon = (cat) => {
+            switch(cat) {
+              case 'Social Cognition': return <i className="fa-solid fa-brain"></i>;
+              case 'Groups': return <i className="fa-solid fa-users"></i>;
+              case 'Prejudice': return <i className="fa-solid fa-shield-halved"></i>;
+              case 'Morality': return <i className="fa-solid fa-scale-balanced"></i>;
+              case 'Disorders': return <i className="fa-solid fa-stethoscope"></i>;
+              default: return <i className="fa-solid fa-book-open"></i>;
+            }
+          };
+
+          const renderCardContent = (text, type, isBackSide) => {
+            if (!text) return null;
+            
+            const shouldFormat = isBackSide ? !isCurrentlyReversed : isCurrentlyReversed;
+
+            if (shouldFormat) {
+              if (type === 'comparison') {
+                const parts = text.split('\n');
+                return (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full text-left">
+                    {parts.map((part, i) => {
+                      const [title, desc] = part.split(': ');
+                      return (
+                        <div key={i} className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                          <strong className="block text-indigo-700 mb-1">{title}</strong>
+                          <span className="text-slate-600 text-[0.95rem]">{desc || part}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              }
+              
+              if (type === 'list') {
+                const parts = text.split('\n');
+                const intro = parts[0].match(/^\d\./) ? null : parts[0];
+                const listItems = intro ? parts.slice(1) : parts;
+                
+                return (
+                  <div className="text-left w-full max-w-lg mx-auto">
+                    {intro && <p className="mb-3 text-slate-700 font-medium">{intro}</p>}
+                    <ul className="space-y-2">
+                      {listItems.map((item, i) => (
+                        <li key={i} className="flex gap-3 items-start bg-slate-50 p-3 rounded-lg border border-slate-100 shadow-sm">
+                          <span className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 font-bold text-sm">
+                            {item.match(/^\d\./) ? item.charAt(0) : '•'}
+                          </span>
+                          <span className="text-slate-600 text-[0.95rem] mt-0.5 leading-snug">
+                            {item.replace(/^\d\.\s*/, '')}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              }
+            }
+
+            return <div className="whitespace-pre-wrap leading-relaxed">{text}</div>;
+          };
+
+          return (
+            <div className="min-h-screen bg-slate-50 text-slate-900 font-sans p-4 md:p-8">
+              <header className="max-w-5xl mx-auto mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                <div>
+                  <h1 className="text-2xl font-bold text-indigo-900 flex items-center gap-2">
+                    <i className="fa-solid fa-brain text-indigo-600"></i>
+                    Psychology Study Suite
+                  </h1>
+                  <p className="text-slate-500 text-sm mt-1">Exam 3: Complete Deck (55 Cards)</p>
+                </div>
+                <div className="flex flex-wrap gap-2 items-center">
+                  
+                  <div className="flex items-center bg-slate-100 p-1 rounded-lg border border-slate-200 mr-2">
+                    <span className="text-xs font-bold text-slate-400 px-2 uppercase tracking-wide">Mode</span>
+                    <select 
+                      value={studyDirection} 
+                      onChange={(e) => setStudyDirection(e.target.value)}
+                      className="bg-transparent text-sm font-medium text-slate-700 outline-none cursor-pointer"
+                      title="Only applies to Bidirectional cards"
+                    >
+                      <option value="front">Term → Definition</option>
+                      <option value="back">Definition → Term</option>
+                      <option value="mixed">Mixed (Shuffle)</option>
+                    </select>
+                  </div>
+
+                  <button 
+                    onClick={() => setViewMode(viewMode === 'study' ? 'list' : 'study')}
+                    className="flex items-center gap-2 px-3 py-2 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition-colors text-sm font-bold"
+                  >
+                    {viewMode === 'study' ? <i className="fa-solid fa-table-cells-large text-sm"></i> : <i className="fa-solid fa-book-open text-sm"></i>}
+                    {viewMode === 'study' ? 'List View' : 'Study View'}
+                  </button>
+                  <button 
+                    onClick={() => setShowImport(true)}
+                    className="flex items-center gap-2 px-3 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors text-sm font-bold"
+                  >
+                    <i className="fa-solid fa-upload text-sm"></i>
+                    Import
+                  </button>
+                </div>
+              </header>
+
+              <main className="max-w-5xl mx-auto">
+                <div className="flex flex-wrap gap-2 mb-8 justify-center">
+                  {categories.map(cat => (
+                    <button
+                      key={cat}
+                      onClick={() => { setFilter(cat); setCurrentIndex(0); setIsFlipped(false); }}
+                      className={`px-4 py-2 rounded-full text-sm font-bold transition-all flex items-center gap-2 ${
+                        filter === cat 
+                        ? 'bg-indigo-600 text-white shadow-md transform scale-105' 
+                        : 'bg-white text-slate-600 border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50'
+                      }`}
+                    >
+                      {filter === cat && getCategoryIcon(cat)}
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+
+                {viewMode === 'study' ? (
+                  <>
+                    <div className="relative perspective-1000 max-w-3xl mx-auto h-[450px]">
+                      <div 
+                        onClick={handleFlip}
+                        className={`w-full h-full cursor-pointer transition-transform duration-500 transform-style-3d ${
+                          isFlipped ? 'rotate-y-180' : ''
+                        }`}
+                      >
+                        <div className="absolute inset-0 backface-hidden w-full h-full bg-white rounded-3xl shadow-xl border border-slate-200 flex flex-col items-center justify-center p-6 md:p-10 text-center z-20">
+                          <div className="absolute top-6 flex items-center justify-between w-full px-8">
+                            <span className="px-3 py-1 bg-indigo-50 text-indigo-600 text-xs font-bold rounded-full uppercase tracking-wider flex items-center gap-1.5">
+                              {getCategoryIcon(currentCard?.category)} {currentCard?.category}
+                            </span>
+                            {currentCard?.type === 'bidirectional' && (
+                               <span className="text-slate-300" title="Bidirectional Card"><i className="fa-solid fa-shuffle text-sm"></i></span>
+                            )}
+                          </div>
+                          
+                          <div className="text-2xl md:text-3xl font-semibold text-slate-800 w-full overflow-y-auto max-h-[250px] custom-scrollbar">
+                            {renderCardContent(displayFront, currentCard?.type, false)}
+                          </div>
+                          
+                          <p className="absolute bottom-6 text-slate-400 text-sm font-medium flex items-center gap-2">
+                            <i className="fa-solid fa-rotate text-xs"></i> Click anywhere to flip
+                          </p>
+                        </div>
+
+                        <div className="absolute inset-0 backface-hidden rotate-y-180 w-full h-full bg-white rounded-3xl shadow-xl border border-slate-200 flex flex-col items-center justify-center p-6 md:p-10 text-center z-10">
+                          <span className="absolute top-6 px-3 py-1 bg-emerald-50 text-emerald-600 text-xs font-bold rounded-full uppercase tracking-wider">
+                            ANSWER
+                          </span>
+                          
+                          <div className="text-lg md:text-xl text-slate-700 font-medium w-full overflow-y-auto max-h-[300px] custom-scrollbar">
+                            {renderCardContent(displayBack, currentCard?.type, true)}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-center mt-10 gap-4 md:gap-8">
+                      <button 
+                        onClick={handlePrev}
+                        className="p-4 bg-white border border-slate-200 text-slate-600 rounded-2xl hover:bg-slate-50 hover:text-indigo-600 shadow-sm transition-all active:scale-95"
+                      >
+                        <i className="fa-solid fa-arrow-left text-xl"></i>
+                      </button>
+
+                      <div className="flex gap-3">
+                        <button 
+                          onClick={handleNext}
+                          className="flex flex-col md:flex-row items-center justify-center gap-2 px-6 py-3 min-w-[120px] bg-emerald-500 text-white rounded-2xl font-bold shadow-lg shadow-emerald-200 hover:bg-emerald-600 hover:-translate-y-1 transition-all active:scale-95"
+                        >
+                          <i className="fa-solid fa-circle-check text-lg"></i> <span className="hidden md:inline">I know this</span>
+                        </button>
+                        <button 
+                          onClick={handleNext}
+                          className="flex flex-col md:flex-row items-center justify-center gap-2 px-6 py-3 min-w-[120px] bg-amber-500 text-white rounded-2xl font-bold shadow-lg shadow-amber-200 hover:bg-amber-600 hover:-translate-y-1 transition-all active:scale-95"
+                        >
+                          <i className="fa-solid fa-circle-xmark text-lg"></i> <span className="hidden md:inline">Needs review</span>
+                        </button>
+                      </div>
+
+                      <button 
+                        onClick={handleNext}
+                        className="p-4 bg-white border border-slate-200 text-slate-600 rounded-2xl hover:bg-slate-50 hover:text-indigo-600 shadow-sm transition-all active:scale-95"
+                      >
+                        <i className="fa-solid fa-arrow-right text-xl"></i>
+                      </button>
+                    </div>
+
+                    <div className="mt-8 max-w-sm mx-auto">
+                      <div className="flex justify-between text-xs font-bold text-slate-400 mb-2 uppercase tracking-wide">
+                        <span>Card {currentIndex + 1}</span>
+                        <span>Total {filteredCards.length}</span>
+                      </div>
+                      <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-indigo-500 transition-all duration-300"
+                          style={{ width: `${((currentIndex + 1) / filteredCards.length) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="grid gap-6 md:grid-cols-2">
+                    {filteredCards.map((card) => (
+                      <div key={card.id} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full">
+                        <div className="flex items-center gap-2 mb-4">
+                          <span className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
+                            {getCategoryIcon(card.category)}
+                          </span>
+                          <span className="text-xs font-bold text-indigo-400 uppercase tracking-wide">{card.category}</span>
+                          {card.type && (
+                            <span className="ml-auto text-[10px] font-bold text-slate-300 uppercase px-2 py-1 bg-slate-50 rounded">
+                              {card.type}
+                            </span>
+                          )}
+                        </div>
+                        <h3 className="text-lg font-bold text-slate-800 mb-4">{card.front}</h3>
+                        <div className="mt-auto pt-4 border-t border-slate-100">
+                          {renderCardContent(card.back, card.type, true)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </main>
+
+              {showImport && (
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                  <div className="bg-white w-full max-w-2xl rounded-3xl p-8 shadow-2xl">
+                    <h2 className="text-2xl font-bold text-slate-800 mb-2">Import Custom Cards</h2>
+                    <p className="text-slate-500 mb-6 text-sm">
+                      Paste array data in JSON format. Allowed types: <code className="bg-slate-100 px-1 rounded">basic</code>, <code className="bg-slate-100 px-1 rounded">bidirectional</code>, <code className="bg-slate-100 px-1 rounded">list</code>, <code className="bg-slate-100 px-1 rounded">comparison</code>.
+                    </p>
+                    <textarea
+                      value={importText}
+                      onChange={(e) => setImportText(e.target.value)}
+                      className="w-full h-64 p-4 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm mb-6 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                      placeholder='[
+          {
+            "front": "What does the Amygdala do?", 
+            "back": "Evaluates threatening information and processes fear.", 
+            "category": "Disorders",
+            "type": "basic"
+          }
+        ]'
+                    />
+                    <div className="flex justify-end gap-3">
+                      <button 
+                        onClick={() => setShowImport(false)}
+                        className="px-6 py-2.5 text-slate-600 font-bold hover:bg-slate-100 rounded-xl transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button 
+                        onClick={handleImport}
+                        className="px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200"
+                      >
+                        Add Cards
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
